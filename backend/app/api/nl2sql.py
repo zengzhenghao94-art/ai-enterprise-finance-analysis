@@ -113,9 +113,7 @@ def nl2sql(req: NL2SQLRequest, db: Session = Depends(get_db)):
         explanation = query_llm(explain_prompt).strip()
     except Exception as e:
         print(repr(e))
-        explanation = f"查询返回 {len(result)} 条记录。"
-    finally:
-        pass
+        explanation = f"查询返回 {len(result)} 条记录。（注：AI 解释生成失败，以上为自动摘要）"
 
     tokens_used = estimate_tokens(user_prompt, system_prompt)
 

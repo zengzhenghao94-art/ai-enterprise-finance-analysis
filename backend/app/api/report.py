@@ -1,10 +1,8 @@
 """经营简报生成 API"""
 
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
-from fastapi import HTTPException
 
 from ..database import get_db
 from ..models import FinancialMetric, Department, Anomaly
