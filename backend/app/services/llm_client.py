@@ -1,6 +1,7 @@
 """LLM API 调用封装 —— 统一入口，支持通义千问和 DeepSeek"""
 
 import os
+import httpx
 from openai import OpenAI
 
 
@@ -11,7 +12,9 @@ def _get_client() -> OpenAI:
             "LLM_API_KEY 未配置。请在 backend/.env 中填入你的 API Key。"
         )
     base_url = os.getenv("LLM_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-    return OpenAI(api_key=api_key, base_url=base_url, timeout=30.0)
+    # 不走系统代理（通义千问国内直连）。如需 DeepSeek 走代理，去掉 trust_env=False
+    http_client = httpx.Client(trust_env=False)
+    return OpenAI(api_key=api_key, base_url=base_url, timeout=30.0, http_client=http_client)
 
 
 def query_llm(prompt: str, system_prompt: str = None, model: str = None) -> str:
