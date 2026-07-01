@@ -43,6 +43,10 @@ def _isolation_forest_detect(metrics_data: list[dict], contamination: float) -> 
     if len(anomaly_indices) == 0:
         return []
 
+    # P0-2: 小样本下 IF 可能把所有点判为异常，此时 normal_X 为空，后续计算产生 NaN
+    if len(normal_indices) == 0:
+        return []
+
     normal_X = X[normal_indices]
     metric_names = [
         ("revenue", "营业收入"), ("cost", "营业成本"),

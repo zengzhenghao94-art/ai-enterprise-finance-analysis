@@ -9,19 +9,12 @@ from ..schemas import IndicatorOut, IndicatorListResponse
 
 router = APIRouter(prefix="/api/indicators", tags=["indicators"])
 
-# 允许查询的字段白名单
-ALLOWED_METRICS = {
-    "revenue", "cost", "operating_expense",
-    "net_profit", "cash_flow", "accounts_receivable",
-}
-
 
 @router.get("", response_model=IndicatorListResponse)
 def list_indicators(
     department_id: Optional[int] = Query(None, description="部门 ID"),
     year: Optional[int] = Query(None, description="年份"),
     month: Optional[int] = Query(None, description="月份"),
-    metrics: Optional[str] = Query(None, description="逗号分隔的字段列表，如 revenue,cost"),
     db: Session = Depends(get_db),
 ):
     """查询月度经营指标，支持多条件筛选"""
