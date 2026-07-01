@@ -16,7 +16,7 @@
           <label class="text-sm text-gray-500">部门</label>
           <select
             :value="selectedDept"
-            @change="$emit('update:selected-dept', $event.target.value || null)"
+            @change="$emit('update:selected-dept', $event.target.value ? Number($event.target.value) : null)"
             class="px-3 py-1.5 border border-gray-300 rounded-md text-sm
                    focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none
                    bg-white cursor-pointer"
@@ -55,7 +55,7 @@
 <script setup>
 defineProps({
   departments: { type: Array, default: () => [] },
-  selectedDept: { type: [Number, Object], default: null },
+  selectedDept: { type: Number, default: null },
   selectedYear: { type: Number, default: 2025 },
 })
 

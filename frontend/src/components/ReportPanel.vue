@@ -59,10 +59,11 @@
           </ul>
         </div>
 
-        <!-- 简报正文（纯文本渲染，不解析 Markdown） -->
-        <div class="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap border-t border-gray-100 pt-3">
-          {{ report.content }}
-        </div>
+        <!-- 简报正文（Markdown 渲染） -->
+        <div
+          class="text-xs text-gray-600 leading-relaxed border-t border-gray-100 pt-3 prose prose-sm max-w-none"
+          v-html="renderedContent"
+        ></div>
 
         <!-- 生成时间 -->
         <div class="text-xs text-gray-400">
@@ -74,17 +75,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { marked } from 'marked'
 import { generateReport } from '../api/index.js'
 
 const props = defineProps({
-  departmentId: { type: [Number, Object], default: null },
+  departmentId: { type: Number, default: null },
   year: { type: Number, default: 2025 },
 })
 
 const report = ref(null)
 const generating = ref(false)
 const error = ref('')
+
+const renderedContent = computed(() => {
+  if (!report.value?.content) return ''
+  return marked.parse(report.value.content)
+})
 
 async function generateReportFn() {
   generating.value = true
@@ -93,9 +100,9 @@ async function generateReportFn() {
 
   try {
     const body = {
-      department_id: props.departmentId || null,
+      department_id: props.departmentId ?? null,
       year: props.year,
-      month: 6,
+      month: new Date().getMonth() + 1,
       include_anomalies: true,
     }
     report.value = await generateReport(body)

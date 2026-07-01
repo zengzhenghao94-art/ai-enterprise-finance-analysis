@@ -102,11 +102,14 @@ function buildOption() {
   }
 }
 
-function renderChart() {
+function initOrUpdate() {
   if (!chartRef.value) return
-  if (chart) chart.dispose()
-  chart = echarts.init(chartRef.value)
-  chart.setOption(buildOption())
+  if (chart) {
+    chart.setOption(buildOption(), { notMerge: true })
+  } else {
+    chart = echarts.init(chartRef.value)
+    chart.setOption(buildOption())
+  }
 }
 
 function handleResize() {
@@ -115,11 +118,11 @@ function handleResize() {
 
 watch(() => props.indicators, async () => {
   await nextTick()
-  renderChart()
-}, { deep: true })
+  initOrUpdate()
+})
 
 onMounted(() => {
-  renderChart()
+  initOrUpdate()
   window.addEventListener('resize', handleResize)
 })
 

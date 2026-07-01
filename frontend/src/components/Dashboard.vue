@@ -1,5 +1,14 @@
 <template>
   <div class="space-y-6">
+    <!-- 加载错误 -->
+    <div
+      v-if="error"
+      class="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 text-sm text-yellow-800 flex items-center gap-2"
+    >
+      <span class="text-base">⚠️</span>
+      {{ error }}
+    </div>
+
     <!-- KPI 卡片行 -->
     <KpiCards :indicators="indicators" :loading="loading" />
 
@@ -28,9 +37,11 @@ const props = defineProps({
 
 const indicators = ref([])
 const loading = ref(false)
+const error = ref('')
 
 async function loadIndicators() {
   loading.value = true
+  error.value = ''
   try {
     const params = { year: props.year }
     if (props.departmentId) params.department_id = props.departmentId
@@ -38,6 +49,7 @@ async function loadIndicators() {
     indicators.value = res.data || []
   } catch (e) {
     console.error('加载指标失败:', e)
+    error.value = '数据加载失败，请检查后端服务'
     indicators.value = []
   } finally {
     loading.value = false

@@ -99,7 +99,7 @@ import { ref } from 'vue'
 import { queryNL2SQL } from '../api/index.js'
 
 const props = defineProps({
-  departmentId: { type: [Number, Object], default: null },
+  departmentId: { type: Number, default: null },
   year: { type: Number, default: 2025 },
 })
 
@@ -118,7 +118,8 @@ async function sendQuery() {
   try {
     const body = {
       query: query.value.trim(),
-      department_id: props.departmentId || null,
+      department_id: props.departmentId ?? null,
+      year: props.year,
     }
     result.value = await queryNL2SQL(body)
   } catch (e) {

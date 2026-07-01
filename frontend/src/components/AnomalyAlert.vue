@@ -10,6 +10,15 @@
       </span>
     </h4>
 
+    <!-- 加载错误 -->
+    <div
+      v-if="error"
+      class="bg-yellow-50 border border-yellow-300 rounded-lg px-3 py-2 text-sm text-yellow-800 flex items-center gap-2"
+    >
+      <span>⚠️</span>
+      {{ error }}
+    </div>
+
     <!-- 加载中 -->
     <div v-if="loading" class="space-y-2">
       <div v-for="i in 3" :key="i" class="h-14 bg-gray-100 rounded-lg animate-pulse"></div>
@@ -81,27 +90,32 @@ const props = defineProps({
 
 const anomalies = ref([])
 const loading = ref(false)
+const error = ref('')
+const backendSummary = ref({})
 
 const summaryText = computed(() => {
   if (!anomalies.value.length) return ''
-  const high = anomalies.value.filter(a => a.severity === 'high').length
-  const medium = anomalies.value.filter(a => a.severity === 'medium').length
+  const s = backendSummary.value
   const parts = []
-  if (high) parts.push(`🔴${high}`)
-  if (medium) parts.push(`🟠${medium}`)
+  if (s.high) parts.push(`🔴${s.high}`)
+  if (s.medium) parts.push(`🟠${s.medium}`)
   return parts.join(' ')
 })
 
 async function loadAnomalies() {
   loading.value = true
+  error.value = ''
   try {
     const params = { year: props.year }
     if (props.departmentId) params.department_id = props.departmentId
     const res = await fetchAnomalies(params)
     anomalies.value = res.data || []
+    backendSummary.value = res.summary || {}
   } catch (e) {
     console.error('加载异常失败:', e)
+    error.value = '异常数据加载失败，请检查后端服务'
     anomalies.value = []
+    backendSummary.value = {}
   } finally {
     loading.value = false
   }
