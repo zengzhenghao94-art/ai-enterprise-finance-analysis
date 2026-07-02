@@ -9,19 +9,33 @@
         </svg>
         经营简报
       </h3>
-      <button
-        @click="generateReportFn"
-        :disabled="generating"
-        class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium
-               hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed
-               transition-colors flex items-center gap-1"
-      >
-        <svg v-if="generating" class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-        </svg>
-        {{ generating ? '生成中' : '生成简报' }}
-      </button>
+      <div class="flex items-center gap-2">
+        <!-- 年份（与右上角同步） -->
+        <span class="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-1 rounded">{{ year }}年</span>
+        <!-- 月份选择 -->
+        <select
+          v-model.number="selectedMonth"
+          :disabled="generating"
+          class="px-2 py-1.5 border border-green-300 rounded-md text-xs
+                 focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                 bg-white cursor-pointer disabled:opacity-50"
+        >
+          <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
+        </select>
+        <button
+          @click="generateReportFn"
+          :disabled="generating"
+          class="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium
+                 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed
+                 transition-colors flex items-center gap-1 shrink-0"
+        >
+          <svg v-if="generating" class="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+          {{ generating ? '生成中' : '生成简报' }}
+        </button>
+      </div>
     </div>
 
     <!-- 简报内容 -->
@@ -31,16 +45,24 @@
         v-if="!report && !error && !generating"
         class="py-8 text-center text-gray-400 text-sm"
       >
-        点击"生成简报"自动分析当前经营数据
+        <div class="text-2xl mb-2">📋</div>
+        选择月份，点击"生成简报"自动分析经营数据
+      </div>
+
+      <!-- 加载中 -->
+      <div v-if="generating" class="py-8 text-center">
+        <div class="animate-spin w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+        <div class="text-sm text-gray-400">AI 正在生成简报...</div>
       </div>
 
       <!-- 错误 -->
-      <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+      <div v-if="error && !generating" class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+        <div class="font-medium mb-1">⚠️ 生成失败</div>
         {{ error }}
       </div>
 
       <!-- 生成的简报 -->
-      <div v-if="report" class="space-y-4">
+      <div v-if="report && !generating" class="space-y-4">
         <!-- 标题 -->
         <div class="text-sm font-semibold text-gray-800">{{ report.title }}</div>
 
@@ -87,6 +109,7 @@ const props = defineProps({
 const report = ref(null)
 const generating = ref(false)
 const error = ref('')
+const selectedMonth = ref(new Date().getMonth() + 1)  // 默认当前月
 
 const renderedContent = computed(() => {
   if (!report.value?.content) return ''
@@ -94,6 +117,7 @@ const renderedContent = computed(() => {
 })
 
 async function generateReportFn() {
+  if (generating.value) return
   generating.value = true
   error.value = ''
   report.value = null
@@ -102,7 +126,7 @@ async function generateReportFn() {
     const body = {
       department_id: props.departmentId ?? null,
       year: props.year,
-      month: new Date().getMonth() + 1,
+      month: selectedMonth.value,
       include_anomalies: true,
     }
     report.value = await generateReport(body)

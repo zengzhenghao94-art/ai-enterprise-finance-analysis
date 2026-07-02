@@ -1,6 +1,7 @@
 """FastAPI 入口 —— 挂载路由、CORS、启动初始化"""
 
 from pathlib import Path
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 # 加载 .env（必须在其他模块之前）
@@ -18,7 +19,21 @@ from .api.anomalies import router as anomaly_router
 from .api.nl2sql import router as nl2sql_router
 from .api.report import router as report_router
 
-app = FastAPI(title="企业财务分析 API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """启动时初始化数据库 + 生成种子数据"""
+    init_db()
+    from .services.data_generator import generate_and_seed
+    db = SessionLocal()
+    try:
+        generate_and_seed(db)
+    finally:
+        db.close()
+    yield
+
+
+app = FastAPI(title="企业财务分析 API", version="0.1.0", lifespan=lifespan)
 
 # CORS — 开发阶段允许所有来源
 app.add_middleware(
@@ -35,18 +50,6 @@ app.include_router(indicator_router)
 app.include_router(anomaly_router)
 app.include_router(nl2sql_router)
 app.include_router(report_router)
-
-
-@app.on_event("startup")
-def on_startup():
-    """启动时初始化数据库 + 生成种子数据"""
-    init_db()
-    from .services.data_generator import generate_and_seed
-    db = SessionLocal()
-    try:
-        generate_and_seed(db)
-    finally:
-        db.close()
 
 
 @app.get("/api/health", response_model=HealthResponse)

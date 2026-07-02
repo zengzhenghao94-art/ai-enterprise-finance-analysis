@@ -3,13 +3,17 @@
     <h4 class="text-sm font-semibold text-gray-700 mb-3">📈 月度趋势</h4>
 
     <!-- 加载骨架 -->
-    <div v-if="loading" class="h-64 bg-gray-100 rounded-lg animate-pulse"></div>
+    <div v-if="loading" class="h-80 bg-gray-100 rounded-lg animate-pulse"></div>
 
     <!-- 图表 -->
-    <div v-else-if="indicators.length" ref="chartRef" class="h-64"></div>
+    <div
+      v-else-if="indicators.length"
+      ref="chartRef"
+      class="h-80 w-full"
+    ></div>
 
     <!-- 空状态 -->
-    <div v-else class="h-64 flex items-center justify-center text-gray-400 text-sm">
+    <div v-else class="h-80 flex items-center justify-center text-gray-400 text-sm">
       暂无趋势数据
     </div>
   </div>
@@ -33,7 +37,13 @@ function buildOption() {
     return a.month - a.month
   })
 
-  const xAxis = data.map(d => `${d.year}-${String(d.month).padStart(2, '0')}`)
+  // 判断是否为跨年数据，需要年份前缀区分同月
+  const years = [...new Set(data.map(d => d.year))]
+  const multiYear = years.length > 1
+
+  const xAxisData = data.map(d =>
+    multiYear ? `${d.year}/${d.month}月` : `${d.month}月`
+  )
 
   return {
     tooltip: {
@@ -41,24 +51,54 @@ function buildOption() {
       backgroundColor: '#fff',
       borderColor: '#e5e7eb',
       textStyle: { color: '#374151', fontSize: 12 },
+      formatter: function (params) {
+        let html = `<strong>${params[0].axisValue}</strong><br/>`
+        params.forEach(p => {
+          html += `${p.marker} ${p.seriesName}: <strong>${p.value.toLocaleString('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</strong> 万元<br/>`
+        })
+        return html
+      },
     },
     legend: {
       data: ['营业收入', '营业成本', '净利润'],
-      bottom: 0,
+      top: 0,
+      left: 'center',
       textStyle: { fontSize: 11 },
+      itemGap: 20,
     },
-    grid: { left: 12, right: 12, top: 12, bottom: 36 },
+    grid: {
+      left: 60,
+      right: 24,
+      top: 30,
+      bottom: 40,
+    },
     xAxis: {
       type: 'category',
-      data: xAxis,
-      axisLabel: { fontSize: 10, color: '#9ca3af', rotate: 45 },
+      data: xAxisData,
+      name: multiYear ? '年/月' : '月份',
+      nameLocation: 'center',
+      nameGap: 30,
+      nameTextStyle: { fontSize: 11, color: '#6b7280' },
+      axisLabel: {
+        fontSize: 10,
+        color: '#6b7280',
+        interval: 1,
+        rotate: data.length > 12 ? 30 : 0,
+      },
       axisTick: { show: false },
     },
     yAxis: {
       type: 'value',
       name: '万元',
-      nameTextStyle: { fontSize: 10, color: '#9ca3af' },
-      axisLabel: { fontSize: 10, color: '#9ca3af' },
+      nameLocation: 'end',
+      nameGap: 10,
+      nameTextStyle: { fontSize: 12, color: '#374151', fontWeight: 'bold', align: 'left' },
+      axisLabel: {
+        fontSize: 10,
+        color: '#6b7280',
+        formatter: v => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(0),
+      },
+      splitNumber: 5,
       splitLine: { lineStyle: { color: '#f3f4f6' } },
     },
     series: [
@@ -102,32 +142,55 @@ function buildOption() {
   }
 }
 
-function initOrUpdate() {
-  if (!chartRef.value) return
+function disposeChart() {
   if (chart) {
-    chart.setOption(buildOption(), { notMerge: true })
-  } else {
-    chart = echarts.init(chartRef.value)
-    chart.setOption(buildOption())
+    chart.dispose()
+    chart = null
   }
+}
+
+function renderChart() {
+  if (!chartRef.value) return
+  // 每次 render 前先 dispose 旧实例，确保绑定到当前 DOM
+  disposeChart()
+  chart = echarts.init(chartRef.value)
+  chart.setOption(buildOption())
 }
 
 function handleResize() {
   chart?.resize()
 }
 
-watch(() => props.indicators, async () => {
-  await nextTick()
-  initOrUpdate()
+// ⚠️ 关键：loading 变 true 时 v-if 会把 chart div 从 DOM 摘掉，
+// 必须在此时 dispose ECharts 实例，否则之后 renderChart 拿到的是僵尸实例。
+watch(() => props.loading, (newVal) => {
+  if (newVal) {
+    disposeChart()
+  } else {
+    nextTick().then(renderChart)
+  }
+})
+
+// 非加载态下的数据更新（同部门切换月份等场景）
+watch(() => props.indicators, () => {
+  if (props.loading) return
+  nextTick().then(() => {
+    if (chart && chartRef.value) {
+      chart.setOption(buildOption(), { notMerge: true })
+      chart.resize()
+    }
+  })
 })
 
 onMounted(() => {
-  initOrUpdate()
+  if (!props.loading) {
+    renderChart()
+  }
   window.addEventListener('resize', handleResize)
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  chart?.dispose()
+  disposeChart()
 })
 </script>

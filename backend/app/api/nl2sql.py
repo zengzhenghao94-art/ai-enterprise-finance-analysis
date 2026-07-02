@@ -27,6 +27,11 @@ def _load_system_prompt() -> str:
     return (
         "你是一个 SQLite SQL 生成助手。根据用户的自然语言输入，生成一条合法的 SQLite SELECT 语句。"
         "只输出 SQL，不要解释。\n\n"
+        "重要规则：\n"
+        "- 年份字段 year 是整数，年份条件必须用字面数字如 `year = 2025`。\n"
+        "- 禁止使用 strftime、date、julianday 等 SQLite 日期函数。\n"
+        "- 月份字段 month 是整数 1-12。\n"
+        "- 如果用户没有指定时间范围，默认查询 2025 年全年。\n\n"
         "## 数据库 Schema\n\n"
         "### departments(id INTEGER PK, name VARCHAR, manager VARCHAR)\n"
         "### financial_metrics(id INTEGER PK, department_id FK, year INT, month INT, "

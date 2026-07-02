@@ -1,5 +1,6 @@
 """经营简报生成 API"""
 
+from pathlib import Path
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -9,6 +10,14 @@ from ..models import FinancialMetric, Department, Anomaly
 from ..schemas import ReportGenerateRequest, ReportGenerateResponse
 
 router = APIRouter(prefix="/api/report", tags=["report"])
+
+
+def _load_report_template() -> str:
+    """加载简报生成的系统提示词模板"""
+    template_path = Path(__file__).resolve().parent.parent.parent.parent / "prompts" / "report_template.txt"
+    if template_path.exists():
+        return template_path.read_text(encoding="utf-8")
+    return ""
 
 
 @router.post("/generate", response_model=ReportGenerateResponse)
@@ -48,7 +57,13 @@ def generate_report(req: ReportGenerateRequest, db: Session = Depends(get_db)):
         anomaly_rows = anomaly_query.all()
 
     # ---- 3. 组装数据文本 ----
+    # 提取部门列表
+    dept_names_in_data = sorted(set(dept_name for _, dept_name in metric_rows))
+    is_multi_dept = len(dept_names_in_data) > 1
+
     data_text = f"## {req.year} 年 {req.month} 月经营数据\n\n"
+    data_text += f"共 {len(dept_names_in_data)} 个部门：{'、'.join(dept_names_in_data)}\n\n"
+
     for metric, dept_name in metric_rows:
         data_text += (
             f"### {dept_name}\n"
@@ -73,18 +88,29 @@ def generate_report(req: ReportGenerateRequest, db: Session = Depends(get_db)):
     else:
         data_text += "（当月无异常记录）\n\n"
 
-    # ---- 4. 调用 LLM 生成简报 ----
+    # ---- 4. 加载系统提示词模板 + 调用 LLM ----
+    system_prompt = _load_report_template()
+
+    # 根据是否多部门调整分析要求
+    if is_multi_dept:
+        dept_analysis_req = (
+            "2. **每个部门单独分析**：逐一列出各部门的收入、成本、利润和关键比率，"
+            "明确标注部门名称，进行部门间横向对比（如毛利率排名、收入占比等）\n"
+        )
+    else:
+        dept_analysis_req = "2. 分析该部门的收入、成本、利润和关键比率\n"
+
     report_prompt = (
         f"{data_text}\n\n"
         "请根据以上数据生成一份经营分析简报。要求：\n"
-        "1. 用 Markdown 格式输出\n"
-        "2. 先给出总体评价，再分部门分析\n"
+        "1. 用 Markdown 格式输出，先给出总体评价\n"
+        + dept_analysis_req +
         "3. 针对异常指标给出风险提示\n"
         "4. 在文章末尾，用 `### KEY_FINDINGS` 标记关键发现（每条一行，用 - 列表）\n"
     )
 
     try:
-        report_content = query_llm(report_prompt)
+        report_content = query_llm(report_prompt, system_prompt=system_prompt if system_prompt else None)
     except ValueError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
@@ -106,7 +132,12 @@ def generate_report(req: ReportGenerateRequest, db: Session = Depends(get_db)):
         key_findings = ["（未检测到 KEY_FINDINGS 标记，请查看完整报告）"]
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
-    dept_suffix = f" - {metric_rows[0][1]}" if req.department_id and metric_rows else ""
+    if req.department_id and metric_rows:
+        dept_suffix = f" - {metric_rows[0][1]}"
+    elif is_multi_dept:
+        dept_suffix = " - 全公司"
+    else:
+        dept_suffix = ""
 
     return ReportGenerateResponse(
         title=f"{req.year}年{req.month}月经营分析简报{dept_suffix}",

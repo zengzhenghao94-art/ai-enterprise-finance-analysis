@@ -3,7 +3,7 @@
  * 所有接口调用统一走这里，组件不直接写 fetch
  */
 
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = ''  // 开发时 Vite proxy 转发 /api → localhost:8000
 
 async function request(url, options = {}) {
   const config = {

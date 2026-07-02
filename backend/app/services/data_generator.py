@@ -1,32 +1,44 @@
-"""模拟财务数据生成 —— 带季节波动 + 噪声 + 增长趋势 + 异常注入"""
+"""模拟财务数据生成 —— 2024-2025 两年数据 + 季节波动 + 噪声 + 增长趋势 + 异常注入"""
 
 import numpy as np
 from datetime import datetime, timezone
 
 
 def generate_and_seed(db_session):
-    """生成 3 个部门的 12 个月财务数据 + 5 条异常，写入数据库
+    """生成 3 个部门 × 2 年（2024/2025）× 12 个月 = 72 条财务数据 + 种子异常，写入数据库
 
-    只执行一次：如果数据库已有数据，跳过。
+    只执行一次：如果数据库已有 2024 年数据，跳过。
+    如果只有 2025 年数据（旧版），补充 2024 年数据。
     """
     from ..models import Department, FinancialMetric, Anomaly
 
-    # 检查是否已有数据
-    existing = db_session.query(FinancialMetric).first()
-    if existing is not None:
-        print("[data_generator] 数据库已有数据，跳过种子生成。")
+    # 检查 2024 年数据是否已存在
+    existing_2024 = db_session.query(FinancialMetric).filter(FinancialMetric.year == 2024).first()
+    if existing_2024 is not None:
+        print("[data_generator] 数据库已有 2024 年数据，跳过种子生成。")
         return
 
-    np.random.seed(42)
+    # 检查部门表是否已存在（避免重复插入部门）
+    existing_depts = db_session.query(Department).first()
+
+    years = [2024, 2025]
+    # 2024 年基准为 2025 年的 87%，体现约 15% 的年度增长
+    year_multipliers = {2024: 0.87, 2025: 1.0}
 
     # ---- 部门 ----
-    departments = [
-        Department(name="销售部", manager="张经理"),
-        Department(name="生产部", manager="李经理"),
-        Department(name="市场部", manager="王经理"),  # P0-a: 财务部→市场部（费用中心不产生营收）
-    ]
-    db_session.add_all(departments)
-    db_session.flush()  # 获取 id
+    if existing_depts is None:
+        departments = [
+            Department(name="销售部", manager="张经理"),
+            Department(name="生产部", manager="李经理"),
+            Department(name="市场部", manager="王经理"),
+        ]
+        db_session.add_all(departments)
+        db_session.flush()  # 获取 id
+    else:
+        departments = existing_depts = db_session.query(Department).all()
+        # 如果已有部门但没 flush，确保 id 可用
+        if hasattr(db_session, 'flush'):
+            db_session.flush()
 
     # ---- 部门特性参数 ----
     dept_params = {
@@ -46,7 +58,7 @@ def generate_and_seed(db_session):
             "cf_noise": 0.15,
             "ar_base": 200, "ar_noise": 0.07,
         },
-        "市场部": {  # P0-a: 原"财务部"
+        "市场部": {
             "base_revenue": 300, "revenue_noise": 0.10,
             "cost_ratio": 0.60, "cost_noise": 0.04,
             "opex_ratio": 0.15, "opex_noise": 0.07,
@@ -67,47 +79,53 @@ def generate_and_seed(db_session):
     }
 
     all_metrics = []
-    dept_month_map: dict[int, dict[int, object]] = {}  # dept_id → {month: FinancialMetric}
+    dept_month_map: dict[tuple, object] = {}  # (dept_id, year, month) → FinancialMetric
 
-    for dept in departments:
-        p = dept_params[dept.name]
-        dept_month_map[dept.id] = {}
-        for month in range(1, 13):
-            season = monthly_season[month]
-            ar_s = ar_season[month]
+    for year in years:
+        y_mult = year_multipliers[year]
+        # 每年用不同随机种子，保证数据有真实差异
+        np.random.seed(42 + (year - 2024) * 137)
 
-            # P1-4: 微弱线性增长趋势，避免全年水平线
-            growth = 1 + month * 0.01
+        for dept in departments:
+            p = dept_params[dept.name]
+            for month in range(1, 13):
+                season = monthly_season[month]
+                ar_s = ar_season[month]
 
-            revenue = p["base_revenue"] * season * growth * (1 + np.random.uniform(-p["revenue_noise"], p["revenue_noise"]))
-            cost = revenue * p["cost_ratio"] * (1 + np.random.uniform(-p["cost_noise"], p["cost_noise"]))
-            opex = revenue * p["opex_ratio"] * (1 + np.random.uniform(-p["opex_noise"], p["opex_noise"]))
+                # 微弱线性增长趋势，避免全年水平线
+                growth = 1 + month * 0.01
 
-            # P0-b: 净利润扣除 25% 企业所得税
-            net_profit = (revenue - cost - opex) * 0.75 * (1 + np.random.uniform(-p["profit_noise"], p["profit_noise"]))
+                revenue = p["base_revenue"] * y_mult * season * growth * (1 + np.random.uniform(-p["revenue_noise"], p["revenue_noise"]))
+                cost = revenue * p["cost_ratio"] * (1 + np.random.uniform(-p["cost_noise"], p["cost_noise"]))
+                opex = revenue * p["opex_ratio"] * (1 + np.random.uniform(-p["opex_noise"], p["opex_noise"]))
 
-            ar = p["ar_base"] * ar_s * (1 + np.random.uniform(-p["ar_noise"], p["ar_noise"]))
+                # 净利润扣除 25% 企业所得税
+                net_profit = (revenue - cost - opex) * 0.75 * (1 + np.random.uniform(-p["profit_noise"], p["profit_noise"]))
 
-            # P1-3: 现金流与应收账款耦合 —— AR 增加消耗现金流，AR 减少改善现金流
-            if len(all_metrics) > 0 and all_metrics[-1].department_id == dept.id:
-                ar_prev = all_metrics[-1].accounts_receivable
-            else:
-                ar_prev = ar  # 该部门首月，无上月数据，ΔAR=0
-            cash_flow = net_profit * (1 + np.random.uniform(-p["cf_noise"], p["cf_noise"])) - (ar - ar_prev) * 0.3
+                ar = p["ar_base"] * y_mult * ar_s * (1 + np.random.uniform(-p["ar_noise"], p["ar_noise"]))
 
-            m = FinancialMetric(
-                department_id=dept.id,
-                year=2025,
-                month=month,
-                revenue=round(revenue, 2),
-                cost=round(cost, 2),
-                operating_expense=round(opex, 2),
-                net_profit=round(net_profit, 2),
-                cash_flow=round(cash_flow, 2),
-                accounts_receivable=round(ar, 2),
-            )
-            all_metrics.append(m)
-            dept_month_map[dept.id][month] = m
+                # 现金流与应收账款耦合 —— AR 增加消耗现金流，AR 减少改善现金流
+                prev_key = (dept.id, year, month - 1) if month > 1 else (dept.id, year - 1, 12)
+                prev_metric = dept_month_map.get(prev_key)
+                if prev_metric is not None:
+                    ar_prev = prev_metric.accounts_receivable
+                else:
+                    ar_prev = ar  # 该部门首月，无上月数据，ΔAR=0
+                cash_flow = net_profit * (1 + np.random.uniform(-p["cf_noise"], p["cf_noise"])) - (ar - ar_prev) * 0.3
+
+                m = FinancialMetric(
+                    department_id=dept.id,
+                    year=year,
+                    month=month,
+                    revenue=round(revenue, 2),
+                    cost=round(cost, 2),
+                    operating_expense=round(opex, 2),
+                    net_profit=round(net_profit, 2),
+                    cash_flow=round(cash_flow, 2),
+                    accounts_receivable=round(ar, 2),
+                )
+                all_metrics.append(m)
+                dept_month_map[(dept.id, year, month)] = m
 
     db_session.add_all(all_metrics)
     db_session.flush()
@@ -133,13 +151,16 @@ def generate_and_seed(db_session):
             return round(m.net_profit / m.revenue * 100, 1) if m.revenue > 0 else 0.0
         return 0.0
 
-    def _make_anomaly(dept_id: int, month: int, metric_name: str, metric_label: str, description: str):
+    def _make_anomaly(dept_id: int, year: int, month: int, metric_name: str, metric_label: str, description: str):
         """基于实际数据构造一条 Anomaly 记录"""
-        m = dept_month_map[dept_id][month]
+        key = (dept_id, year, month)
+        m = dept_month_map.get(key)
+        if m is None:
+            return None
         actual = _metric_value(m, metric_name)
 
-        # 用该部门 12 个月的该指标计算正常范围（均值 ± 标准差）
-        all_vals = [_metric_value(dept_month_map[dept_id][mo], metric_name) for mo in range(1, 13)]
+        # 用该部门该年 12 个月的该指标计算正常范围（均值 ± 标准差）
+        all_vals = [_metric_value(dept_month_map[(dept_id, year, mo)], metric_name) for mo in range(1, 13)]
         mean_val = float(np.mean(all_vals))
         std_val = float(np.std(all_vals))
 
@@ -157,7 +178,7 @@ def generate_and_seed(db_session):
         expected_high = mean_val + std_val
 
         return Anomaly(
-            department_id=dept_id, year=2025, month=month,
+            department_id=dept_id, year=year, month=month,
             metric_name=metric_name, metric_label=metric_label,
             actual_value=actual,
             expected_range=f"{expected_low:.1f}-{expected_high:.1f}",
@@ -165,18 +186,28 @@ def generate_and_seed(db_session):
             description=description, detected_at=now_iso,
         )
 
-    anomalies_data = [
-        _make_anomaly(1, 6, "cost_ratio", "成本收入比",
-                      "6 月成本收入比异常偏高，原材料采购价大幅上涨导致成本失控"),
-        _make_anomaly(2, 3, "revenue", "营业收入",
-                      "3 月收入显著低于预期，可能受春节后开工延迟影响"),
-        _make_anomaly(3, 9, "cash_flow", "现金流",
-                      "9 月现金流骤降，应收账款回收周期延长导致资金紧张"),
-        _make_anomaly(1, 12, "accounts_receivable", "应收账款",
-                      "年末应收账款大幅高于正常水平，存在坏账风险"),
-        _make_anomaly(2, 8, "profit_margin", "净利率",
-                      "8 月净利率异常偏低，运营费用超预算与毛利压缩叠加影响"),
+    # 种子异常：分布在两年中
+    anomaly_specs = [
+        # 2024 年异常
+        (1, 2024, 6, "cost_ratio", "成本收入比",
+         "6 月成本收入比异常偏高，原材料采购价大幅上涨导致成本失控"),
+        (2, 2024, 3, "revenue", "营业收入",
+         "3 月收入显著低于预期，可能受春节后开工延迟影响"),
+        # 2025 年异常
+        (3, 2025, 9, "cash_flow", "现金流",
+         "9 月现金流骤降，应收账款回收周期延长导致资金紧张"),
+        (1, 2025, 12, "accounts_receivable", "应收账款",
+         "年末应收账款大幅高于正常水平，存在坏账风险"),
+        (2, 2025, 8, "profit_margin", "净利率",
+         "8 月净利率异常偏低，运营费用超预算与毛利压缩叠加影响"),
     ]
+
+    anomalies_data = []
+    for spec in anomaly_specs:
+        a = _make_anomaly(*spec)
+        if a is not None:
+            anomalies_data.append(a)
+
     db_session.add_all(anomalies_data)
 
     db_session.commit()

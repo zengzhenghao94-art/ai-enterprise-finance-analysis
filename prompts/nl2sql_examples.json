@@ -11,7 +11,7 @@
   },
   {
     "type": "时间范围查询",
-    "input": "财务部2025年上半年的净利润总和",
+    "input": "市场部2025年上半年的净利润总和",
     "output": "SELECT SUM(net_profit) AS total_net_profit FROM financial_metrics WHERE department_id = 3 AND year = 2025 AND month BETWEEN 1 AND 6"
   },
   {
