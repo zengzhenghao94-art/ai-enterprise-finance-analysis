@@ -74,6 +74,12 @@ def detect_anomalies_endpoint(req: AnomalyDetectRequest, db: Session = Depends(g
 
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S+00:00")
 
+    # 先删除同一年月的旧检测结果（避免重复累积）
+    db.query(Anomaly).filter(
+        Anomaly.year == req.year,
+        Anomaly.month == req.month,
+    ).delete(synchronize_session="fetch")
+
     # 写入 anomalies 表
     saved_count = 0
     for a in anomalies_data:

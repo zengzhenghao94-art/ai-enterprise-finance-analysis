@@ -19,7 +19,8 @@ FORBIDDEN_KEYWORDS = [
 
 
 def _load_system_prompt() -> str:
-    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "nl2sql_system.txt"
+    # 项目根目录下的 prompts/
+    prompt_path = Path(__file__).resolve().parent.parent.parent / "prompts" / "nl2sql_system.txt"
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
     # 内置默认 prompt（含完整 schema）

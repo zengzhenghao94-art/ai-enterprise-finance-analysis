@@ -1,0 +1,52 @@
+[
+  {
+    "type": "单指标查询",
+    "input": "销售部2025年总收入是多少？",
+    "output": "SELECT SUM(revenue) AS total_revenue FROM financial_metrics JOIN departments ON financial_metrics.department_id = departments.id WHERE departments.name = '销售部' AND year = 2025"
+  },
+  {
+    "type": "多指标查询",
+    "input": "生产部6月的收入、成本和净利润",
+    "output": "SELECT revenue, cost, net_profit FROM financial_metrics WHERE department_id = 2 AND year = 2025 AND month = 6"
+  },
+  {
+    "type": "时间范围查询",
+    "input": "财务部2025年上半年的净利润总和",
+    "output": "SELECT SUM(net_profit) AS total_net_profit FROM financial_metrics WHERE department_id = 3 AND year = 2025 AND month BETWEEN 1 AND 6"
+  },
+  {
+    "type": "聚合查询",
+    "input": "2025年各月全公司的总收入趋势",
+    "output": "SELECT month, SUM(revenue) AS total_revenue, SUM(cost) AS total_cost, SUM(net_profit) AS total_net_profit FROM financial_metrics WHERE year = 2025 GROUP BY month ORDER BY month"
+  },
+  {
+    "type": "跨部门对比",
+    "input": "各部门2025年平均毛利率排名",
+    "output": "SELECT departments.name AS department_name, AVG((revenue - cost) / revenue * 100) AS avg_gross_margin FROM financial_metrics JOIN departments ON financial_metrics.department_id = departments.id WHERE year = 2025 GROUP BY departments.name ORDER BY avg_gross_margin DESC"
+  },
+  {
+    "type": "派生指标查询",
+    "input": "销售部2025年各月的毛利率变化",
+    "output": "SELECT month, (revenue - cost) / revenue * 100 AS gross_margin FROM financial_metrics WHERE department_id = 1 AND year = 2025 ORDER BY month"
+  },
+  {
+    "type": "异常查询",
+    "input": "最近有哪些高危异常指标？",
+    "output": "SELECT departments.name AS department_name, metric_label, actual_value, expected_range, deviation_pct, severity, description FROM anomalies JOIN departments ON anomalies.department_id = departments.id WHERE severity = 'high' ORDER BY deviation_pct DESC"
+  },
+  {
+    "type": "现金流查询",
+    "input": "哪个部门2025年现金流最好？",
+    "output": "SELECT departments.name AS department_name, SUM(cash_flow) AS total_cash_flow FROM financial_metrics JOIN departments ON financial_metrics.department_id = departments.id WHERE year = 2025 GROUP BY departments.name ORDER BY total_cash_flow DESC"
+  },
+  {
+    "type": "应收账款查询",
+    "input": "销售部2025年下半年的应收账款情况",
+    "output": "SELECT month, accounts_receivable, revenue, accounts_receivable / revenue AS ar_ratio FROM financial_metrics WHERE department_id = 1 AND year = 2025 AND month BETWEEN 7 AND 12 ORDER BY month"
+  },
+  {
+    "type": "复合查询",
+    "input": "对比销售部和生产部2025年Q1的净利润",
+    "output": "SELECT departments.name AS department_name, SUM(net_profit) AS q1_net_profit FROM financial_metrics JOIN departments ON financial_metrics.department_id = departments.id WHERE year = 2025 AND month BETWEEN 1 AND 3 GROUP BY departments.name ORDER BY q1_net_profit DESC"
+  }
+]
