@@ -80,6 +80,7 @@ D:/Users/z1308/AppData/Local/Programs/Python/Python311/python.exe -m pytest test
 | POST | `/api/anomalies/detect` | 触发 Isolation Forest 异常检测 |
 | POST | `/api/query/nl2sql` | 自然语言→SQL 查询 |
 | POST | `/api/report/generate` | 管理层经营简报生成 |
+| POST | `/api/report/export` | 简报 ZIP 导出（HTML + 图表 PNG + CSS） |
 
 ---
 
@@ -102,7 +103,12 @@ ai企业赋能财务分析/
 │   │   └── services/
 │   │       ├── anomaly_detector.py  # Isolation Forest
 │   │       ├── llm_client.py        # LLM API 封装
-│   │       └── data_generator.py    # 模拟数据生成
+│   │       ├── data_generator.py    # 模拟数据生成
+│   │       └── report/
+│   │           ├── theme.py         # matplotlib Steep 样式配置
+│   │           ├── charts.py        # 4 图表渲染器
+│   │           ├── html_builder.py  # HTML 报告模板
+│   │           └── packager.py      # ZIP 打包
 │   ├── tests/
 │   │   ├── conftest.py          # pytest fixtures
 │   │   └── test_api.py          # 7 端点集成测试
@@ -129,8 +135,10 @@ ai企业赋能财务分析/
 │   ├── nl2sql_examples.json     # Few-shot 示例（10 种查询类型）
 │   └── report_template.txt      # 简报生成模板
 ├── docs/
+│   ├── DESIGN.md                # Steep 设计系统文档（色板/字体/图表规则）
 │   ├── PPT大纲.md               # PPT 5 页结构
-│   └── 答辩脚本.md              # 答辩三问逐字稿（5分40秒）
+│   ├── 答辩脚本.md              # 答辩三问逐字稿（5分40秒）
+│   └── 演示操作手册.md          # 比赛现场操作指南
 └── README.md                    # 本文件
 ```
 
@@ -142,7 +150,15 @@ ai企业赋能财务分析/
 |------|------|--------|
 | 🛡️ **数据哨兵** | Isolation Forest (ML) | 9 维度自动发现异常，实时预警 |
 | 🌉 **数据翻译官** | 通义千问 (LLM) | 自然语言→SQL→查询结果→中文解释 |
-| 📝 **报告写手** | 通义千问 (LLM) | 数据→Markdown 管理层简报 |
+| 📝 **报告写手** | 通义千问 (LLM) | 数据→Markdown 管理层简报 → HTML/ZIP 一键导出 |
+
+## 设计系统
+
+全栈统一 **Steep** 设计（基于 [Refero Steep](https://styles.refero.design/) — "Soft dawn on a marble dashboard"）：
+- 色板：13 个 token（8 灰度 + 5 数据色），图表只用 Steel Blue + Cyan 两条彩色线
+- 前端：Tailwind 自定义主题（`tailwind.config.js`），8 组件 + 全局样式全部对齐
+- 导出报告：matplotlib 200 DPI 渲染，4 图表各有独立 CSS 背景纹理（账簿线/点阵/条纹/同心圆）
+- 详见 [`docs/DESIGN.md`](docs/DESIGN.md)
 
 ## 降级策略
 
