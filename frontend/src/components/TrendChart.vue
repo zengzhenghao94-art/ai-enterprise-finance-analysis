@@ -1,9 +1,9 @@
 <template>
-  <div class="bg-white rounded-xl border border-gray-200 p-4">
-    <h4 class="text-sm font-semibold text-gray-700 mb-3">📈 月度趋势</h4>
+  <div class="bg-white rounded-2xl border border-steep-dove p-4">
+    <h4 class="text-sm font-semibold text-steep-ash mb-3">📈 月度趋势</h4>
 
     <!-- 加载骨架 -->
-    <div v-if="loading" class="h-80 bg-gray-100 rounded-lg animate-pulse"></div>
+    <div v-if="loading" class="h-80 bg-steep-fog rounded-xl animate-pulse"></div>
 
     <!-- 图表 -->
     <div
@@ -13,7 +13,7 @@
     ></div>
 
     <!-- 空状态 -->
-    <div v-else class="h-80 flex items-center justify-center text-gray-400 text-sm">
+    <div v-else class="h-80 flex items-center justify-center text-steep-graphite text-sm">
       暂无趋势数据
     </div>
   </div>
@@ -49,8 +49,8 @@ function buildOption() {
     tooltip: {
       trigger: 'axis',
       backgroundColor: '#fff',
-      borderColor: '#e5e7eb',
-      textStyle: { color: '#374151', fontSize: 12 },
+      borderColor: '#a3a6af',
+      textStyle: { color: '#17191c', fontSize: 12 },
       formatter: function (params) {
         let html = `<strong>${params[0].axisValue}</strong><br/>`
         params.forEach(p => {
@@ -63,7 +63,7 @@ function buildOption() {
       data: ['营业收入', '营业成本', '净利润'],
       top: 0,
       left: 'center',
-      textStyle: { fontSize: 11 },
+      textStyle: { fontSize: 11, color: '#4c4c4c' },
       itemGap: 20,
     },
     grid: {
@@ -78,28 +78,29 @@ function buildOption() {
       name: multiYear ? '年/月' : '月份',
       nameLocation: 'center',
       nameGap: 30,
-      nameTextStyle: { fontSize: 11, color: '#6b7280' },
+      nameTextStyle: { fontSize: 11, color: '#777b86' },
       axisLabel: {
         fontSize: 10,
-        color: '#6b7280',
+        color: '#777b86',
         interval: 1,
         rotate: data.length > 12 ? 30 : 0,
       },
       axisTick: { show: false },
+      axisLine: { lineStyle: { color: '#a3a6af' } },
     },
     yAxis: {
       type: 'value',
       name: '万元',
       nameLocation: 'end',
       nameGap: 10,
-      nameTextStyle: { fontSize: 12, color: '#374151', fontWeight: 'bold', align: 'left' },
+      nameTextStyle: { fontSize: 12, color: '#4c4c4c', fontWeight: 'bold', align: 'left' },
       axisLabel: {
         fontSize: 10,
-        color: '#6b7280',
+        color: '#777b86',
         formatter: v => v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v.toFixed(0),
       },
       splitNumber: 5,
-      splitLine: { lineStyle: { color: '#f3f4f6' } },
+      splitLine: { lineStyle: { color: '#f7f7f8' } },
     },
     series: [
       {
@@ -109,8 +110,8 @@ function buildOption() {
         smooth: true,
         symbol: 'circle',
         symbolSize: 4,
-        lineStyle: { color: '#3b82f6', width: 2 },
-        itemStyle: { color: '#3b82f6' },
+        lineStyle: { color: '#1e40af', width: 2 },
+        itemStyle: { color: '#1e40af' },
       },
       {
         name: '营业成本',
@@ -119,8 +120,8 @@ function buildOption() {
         smooth: true,
         symbol: 'circle',
         symbolSize: 4,
-        lineStyle: { color: '#f59e0b', width: 2 },
-        itemStyle: { color: '#f59e0b' },
+        lineStyle: { color: '#0891b2', width: 2 },
+        itemStyle: { color: '#0891b2' },
       },
       {
         name: '净利润',
@@ -129,12 +130,12 @@ function buildOption() {
         smooth: true,
         symbol: 'circle',
         symbolSize: 4,
-        lineStyle: { color: '#10b981', width: 2 },
-        itemStyle: { color: '#10b981' },
+        lineStyle: { color: '#777b86', width: 2 },
+        itemStyle: { color: '#777b86' },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(16, 185, 129, 0.2)' },
-            { offset: 1, color: 'rgba(16, 185, 129, 0.02)' },
+            { offset: 0, color: 'rgba(119, 123, 134, 0.15)' },
+            { offset: 1, color: 'rgba(119, 123, 134, 0.02)' },
           ]),
         },
       },

@@ -2,9 +2,9 @@
   <div>
     <!-- 加载骨架 -->
     <div v-if="loading" class="grid grid-cols-2 md:grid-cols-3 gap-4">
-      <div v-for="i in 6" :key="i" class="bg-white rounded-xl p-4 border border-gray-200 animate-pulse">
-        <div class="h-3 bg-gray-200 rounded w-16 mb-3"></div>
-        <div class="h-6 bg-gray-200 rounded w-24"></div>
+      <div v-for="i in 6" :key="i" class="bg-white rounded-2xl p-4 border border-steep-dove animate-pulse">
+        <div class="h-3 bg-steep-fog rounded w-16 mb-3"></div>
+        <div class="h-6 bg-steep-fog rounded w-24"></div>
       </div>
     </div>
 
@@ -13,12 +13,12 @@
       <div
         v-for="card in kpiList"
         :key="card.key"
-        class="bg-white rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow"
+        class="bg-white rounded-2xl p-4 border border-steep-dove hover:shadow-md transition-shadow"
       >
-        <div class="text-xs text-gray-400 mb-1">{{ card.label }}</div>
-        <div class="text-xl font-bold text-gray-800">
+        <div class="text-xs text-steep-graphite mb-1">{{ card.label }}</div>
+        <div class="text-xl font-bold text-steep-ink">
           {{ formatNum(card.value) }}
-          <span class="text-xs text-gray-400 font-normal">万元</span>
+          <span class="text-xs text-steep-graphite font-normal">万元</span>
         </div>
       </div>
     </div>
@@ -26,7 +26,7 @@
     <!-- 空状态 -->
     <div
       v-if="!loading && !latestMonth"
-      class="bg-white rounded-xl p-8 border border-gray-200 text-center text-gray-400 text-sm"
+      class="bg-white rounded-2xl p-8 border border-steep-dove text-center text-steep-graphite text-sm"
     >
       暂无指标数据
     </div>

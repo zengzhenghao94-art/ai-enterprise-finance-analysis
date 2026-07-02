@@ -1,8 +1,8 @@
 <template>
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+  <div class="bg-white rounded-2xl shadow-sm border border-steep-dove overflow-hidden">
     <!-- 标题栏 -->
-    <div class="px-4 py-3 bg-blue-50 border-b border-blue-100">
-      <h3 class="text-sm font-semibold text-blue-800 flex items-center gap-2">
+    <div class="px-4 py-3 bg-steep-wash border-b border-steep-sky-wash">
+      <h3 class="text-sm font-semibold text-steep-ink flex items-center gap-2">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
             d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
@@ -20,16 +20,16 @@
         class="py-4 text-center"
       >
         <div class="text-3xl mb-2">💬</div>
-        <div class="text-sm text-gray-600 mb-1">用自然语言提问，AI 自动查数据、做分析</div>
-        <div class="text-xs text-gray-400 mb-4">支持查数、对比、排名、趋势分析等多种问法</div>
+        <div class="text-sm text-steep-ash mb-1">用自然语言提问，AI 自动查数据、做分析</div>
+        <div class="text-xs text-steep-graphite mb-4">支持查数、对比、排名、趋势分析等多种问法</div>
 
         <!-- 查数示例 -->
-        <div class="text-xs text-gray-400 mb-1.5">📊 数据查询</div>
-        <div class="text-xs text-gray-500 space-y-1 mb-3">
+        <div class="text-xs text-steep-graphite mb-1.5">📊 数据查询</div>
+        <div class="text-xs text-steep-graphite space-y-1 mb-3">
           <div
             v-for="(q, i) in sampleLookupQuestions"
             :key="'lookup-' + i"
-            class="hover:text-blue-500 cursor-pointer transition-colors"
+            class="hover:text-steep-blue cursor-pointer transition-colors"
             @click="quickAsk(q)"
           >
             💡 "{{ q }}"
@@ -37,12 +37,12 @@
         </div>
 
         <!-- 分析示例 -->
-        <div class="text-xs text-gray-400 mb-1.5">🔍 智能分析</div>
-        <div class="text-xs text-gray-500 space-y-1">
+        <div class="text-xs text-steep-graphite mb-1.5">🔍 智能分析</div>
+        <div class="text-xs text-steep-graphite space-y-1">
           <div
             v-for="(q, i) in sampleAnalysisQuestions"
             :key="'analysis-' + i"
-            class="hover:text-blue-500 cursor-pointer transition-colors"
+            class="hover:text-steep-blue cursor-pointer transition-colors"
             @click="quickAsk(q)"
           >
             💡 "{{ q }}"
@@ -52,39 +52,39 @@
 
       <!-- 加载中 -->
       <div v-if="loading" class="py-8 text-center">
-        <div class="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
-        <div class="text-sm text-gray-400">AI 正在分析数据...</div>
+        <div class="animate-spin w-6 h-6 border-2 border-steep-blue border-t-transparent rounded-full mx-auto mb-2"></div>
+        <div class="text-sm text-steep-graphite">AI 正在分析数据...</div>
       </div>
 
       <!-- 结果面板 -->
       <template v-if="result && !loading">
         <!-- 生成的 SQL -->
-        <div class="bg-gray-900 text-green-400 text-xs font-mono rounded-lg p-3 overflow-x-auto">
-          <div class="text-gray-500 mb-1">📝 生成 SQL</div>
+        <div class="bg-steep-obsidian text-steep-cyan text-xs font-mono rounded-xl p-3 overflow-x-auto">
+          <div class="text-steep-slate mb-1">📝 生成 SQL</div>
           {{ result.sql_generated }}
         </div>
 
         <!-- 有数据的表格 -->
         <div class="overflow-x-auto" v-if="result.result && result.result.length">
-          <div class="text-xs text-gray-500 mb-1">📊 查询结果（{{ result.result.length }} 条）</div>
+          <div class="text-xs text-steep-graphite mb-1">📊 查询结果（{{ result.result.length }} 条）</div>
           <table class="w-full text-xs border-collapse">
             <thead>
-              <tr class="bg-gray-100">
+              <tr class="bg-steep-fog">
                 <th
                   v-for="key in Object.keys(result.result[0])"
                   :key="key"
-                  class="px-2 py-1.5 text-left font-medium text-gray-600 border border-gray-200"
+                  class="px-2 py-1.5 text-left font-medium text-steep-ash border border-steep-dove"
                 >
                   {{ key }}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, i) in result.result" :key="i" class="hover:bg-gray-50">
+              <tr v-for="(row, i) in result.result" :key="i" class="hover:bg-steep-fog">
                 <td
                   v-for="key in Object.keys(result.result[0])"
                   :key="key"
-                  class="px-2 py-1 border border-gray-200 text-gray-700"
+                  class="px-2 py-1 border border-steep-dove text-steep-ash"
                 >
                   {{ formatCell(row[key]) }}
                 </td>
@@ -96,7 +96,7 @@
         <!-- 空结果明确提示 -->
         <div
           v-if="result.result && !result.result.length"
-          class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800"
+          class="bg-yellow-50 border border-yellow-200 rounded-xl p-3 text-sm text-yellow-800"
         >
           <div class="font-medium mb-1">📭 未找到匹配数据</div>
           <div class="text-xs text-yellow-700">
@@ -110,21 +110,21 @@
         </div>
 
         <!-- 自然语言解释 -->
-        <div class="bg-blue-50 rounded-lg p-3 text-sm text-blue-900" v-if="result.explanation">
-          <div class="text-xs text-blue-500 mb-1">💡 解读</div>
+        <div class="bg-steep-wash rounded-xl p-3 text-sm text-steep-ink" v-if="result.explanation">
+          <div class="text-xs text-steep-blue mb-1">💡 解读</div>
           {{ result.explanation }}
         </div>
 
         <!-- 追问建议 -->
-        <div v-if="result.result && result.result.length" class="border-t border-gray-100 pt-2">
-          <div class="text-xs text-gray-400 mb-1.5">👇 继续追问</div>
+        <div v-if="result.result && result.result.length" class="border-t border-steep-dove pt-2">
+          <div class="text-xs text-steep-graphite mb-1.5">👇 继续追问</div>
           <div class="flex flex-wrap gap-1.5">
             <button
               v-for="(q, i) in suggestedFollowUps"
               :key="i"
               @click="quickAsk(q)"
-              class="px-2 py-1 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 text-xs text-gray-500 rounded-md
-                     border border-gray-100 hover:border-blue-200 transition-colors text-left"
+              class="px-2 py-1 bg-steep-fog hover:bg-steep-wash hover:text-steep-blue text-xs text-steep-graphite rounded-full
+                     border border-steep-dove hover:border-steep-blue transition-colors text-left"
             >
               {{ q }}
             </button>
@@ -132,35 +132,36 @@
         </div>
 
         <!-- Token 消耗 -->
-        <div class="text-xs text-gray-400 text-right" v-if="result.tokens_used">
+        <div class="text-xs text-steep-graphite text-right" v-if="result.tokens_used">
           Token: {{ result.tokens_used }}
         </div>
       </template>
 
       <!-- 错误提示 -->
-      <div v-if="error && !loading" class="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+      <div v-if="error && !loading" class="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
         <div class="font-medium mb-1">⚠️ 查询失败</div>
         {{ error }}
       </div>
     </div>
 
     <!-- 输入区 -->
-    <div class="px-4 py-3 border-t border-gray-100 flex gap-2">
+    <div class="px-4 py-3 border-t border-steep-dove flex gap-2">
       <input
         v-model="query"
         type="text"
         placeholder="输入问题，如：哪个部门利润最高？对比各部门毛利率趋势"
-        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm
-               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+        class="flex-1 px-3 py-2 border border-steep-dove rounded-full text-sm
+               focus:ring-2 focus:ring-steep-blue focus:border-steep-blue outline-none
+               transition-shadow"
         :disabled="loading"
         @keyup.enter="sendQuery"
       />
       <button
         @click="sendQuery"
         :disabled="loading || !query.trim()"
-        class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium
-               hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed
-               transition-colors flex items-center gap-1 shrink-0"
+        class="px-4 py-2 bg-steep-blue text-white rounded-full text-sm font-medium
+               hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
+               transition-opacity flex items-center gap-1 shrink-0"
       >
         <svg v-if="loading" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />

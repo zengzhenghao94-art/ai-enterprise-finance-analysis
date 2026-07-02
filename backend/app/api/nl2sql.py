@@ -20,7 +20,7 @@ FORBIDDEN_KEYWORDS = [
 
 def _load_system_prompt() -> str:
     # 项目根目录下的 prompts/
-    prompt_path = Path(__file__).resolve().parent.parent.parent / "prompts" / "nl2sql_system.txt"
+    prompt_path = Path(__file__).resolve().parent.parent.parent.parent / "prompts" / "nl2sql_system.txt"
     if prompt_path.exists():
         return prompt_path.read_text(encoding="utf-8")
     # 内置默认 prompt（含完整 schema）
@@ -28,6 +28,7 @@ def _load_system_prompt() -> str:
         "你是一个 SQLite SQL 生成助手。根据用户的自然语言输入，生成一条合法的 SQLite SELECT 语句。"
         "只输出 SQL，不要解释。\n\n"
         "重要规则：\n"
+        "- 非查询拦截：如果用户输入是问候、闲聊、感谢等非数据查询内容，直接输出 [NOT_A_QUERY]，不要生成 SQL。\n"
         "- 年份字段 year 是整数，年份条件必须用字面数字如 `year = 2025`。\n"
         "- 禁止使用 strftime、date、julianday 等 SQLite 日期函数。\n"
         "- 月份字段 month 是整数 1-12。\n"
@@ -88,7 +89,21 @@ def nl2sql(req: NL2SQLRequest, db: Session = Depends(get_db)):
 
     sql_generated = raw_sql
 
-    # Step 2: 安全校验
+    # Step 2: 非查询拦截 —— LLM 判定用户输入不是数据查询
+    if raw_sql.strip().upper() == "[NOT_A_QUERY]":
+        return NL2SQLResponse(
+            query=req.query,
+            sql_generated="",
+            result=[],
+            explanation=(
+                "您好！我是经营数据查询助手，可以帮您：\n"
+                "- 📊 查指标：如「销售部 6 月收入」「各部门毛利率排名」\n"
+                "- 📈 做分析：如「上半年净利润趋势」「哪个部门现金流最好」\n"
+                "- ⚠️ 看异常：如「有哪些高危异常」「生产部异常汇总」\n\n"
+                "请尝试输入具体的数据问题～"
+            ),
+            tokens_used=0,
+        )
     if not _validate_sql(raw_sql):
         raise HTTPException(
             status_code=400,

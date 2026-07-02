@@ -3,7 +3,7 @@
     <!-- 加载错误 -->
     <div
       v-if="error"
-      class="bg-yellow-50 border border-yellow-300 rounded-lg px-4 py-3 text-sm text-yellow-800 flex items-center gap-2"
+      class="bg-yellow-50 border border-yellow-300 rounded-2xl px-4 py-3 text-sm text-yellow-800 flex items-center gap-2"
     >
       <span class="text-base">⚠️</span>
       {{ error }}

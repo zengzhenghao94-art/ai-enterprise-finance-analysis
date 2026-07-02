@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-steep-fog">
     <!-- 顶部导航 -->
     <NavBar
       :departments="departments"

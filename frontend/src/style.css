@@ -4,6 +4,8 @@
 
 body {
   margin: 0;
-  background: #f5f6fa;
-  font-family: 'Microsoft YaHei', 'PingFang SC', system-ui, sans-serif;
+  background: #f7f7f8;
+  font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: #17191c;
+  -webkit-font-smoothing: antialiased;
 }
