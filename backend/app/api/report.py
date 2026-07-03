@@ -23,6 +23,49 @@ def _load_report_template() -> str:
     return ""
 
 
+def _safe_pct(numerator: float, denominator: float) -> str:
+    """安全计算百分比字符串，denominator 为 0 时返回 'N/A'"""
+    if denominator == 0:
+        return "N/A"
+    return f"{numerator / denominator * 100:.1f}%"
+
+
+def _build_data_text(metric_rows, anomaly_rows, year: int, month: int) -> str:
+    """构建传给 LLM 的数据文本（generate + export 共用，消除 ~40 行重复）"""
+    dept_names_in_data = sorted(set(dept_name for _, dept_name in metric_rows))
+
+    data_text = f"## {year} 年 {month} 月经营数据\n\n"
+    data_text += f"共 {len(dept_names_in_data)} 个部门：{'、'.join(dept_names_in_data)}\n\n"
+
+    for metric, dept_name in metric_rows:
+        data_text += (
+            f"### {dept_name}\n"
+            f"- 营业收入: {metric.revenue} 万元\n"
+            f"- 营业成本: {metric.cost} 万元"
+            f"（成本收入比: {_safe_pct(metric.cost, metric.revenue)}）\n"
+            f"- 运营费用: {metric.operating_expense} 万元\n"
+            f"- 净利润: {metric.net_profit} 万元"
+            f"（净利率: {_safe_pct(metric.net_profit, metric.revenue)}）\n"
+            f"- 经营现金流: {metric.cash_flow} 万元\n"
+            f"- 应收账款: {metric.accounts_receivable} 万元\n"
+            f"- 毛利率: {_safe_pct(metric.revenue - metric.cost, metric.revenue)}\n\n"
+        )
+
+    if anomaly_rows:
+        data_text += "## 当月异常记录\n\n"
+        for anom, dept_name in anomaly_rows:
+            data_text += (
+                f"- [{anom.severity.upper()}] {dept_name} - {anom.metric_label}: "
+                f"实际 {anom.actual_value}, 预期 {anom.expected_range}, "
+                f"偏离 {anom.deviation_pct:+.1f}%\n"
+            )
+        data_text += "\n"
+    else:
+        data_text += "（当月无异常记录）\n\n"
+
+    return data_text, dept_names_in_data
+
+
 @router.post("/generate", response_model=ReportGenerateResponse)
 def generate_report(req: ReportGenerateRequest, db: Session = Depends(get_db)):
     """基于指定年月数据，生成 Markdown 格式经营简报"""
@@ -60,36 +103,8 @@ def generate_report(req: ReportGenerateRequest, db: Session = Depends(get_db)):
         anomaly_rows = anomaly_query.all()
 
     # ---- 3. 组装数据文本 ----
-    # 提取部门列表
-    dept_names_in_data = sorted(set(dept_name for _, dept_name in metric_rows))
+    data_text, dept_names_in_data = _build_data_text(metric_rows, anomaly_rows, req.year, req.month)
     is_multi_dept = len(dept_names_in_data) > 1
-
-    data_text = f"## {req.year} 年 {req.month} 月经营数据\n\n"
-    data_text += f"共 {len(dept_names_in_data)} 个部门：{'、'.join(dept_names_in_data)}\n\n"
-
-    for metric, dept_name in metric_rows:
-        data_text += (
-            f"### {dept_name}\n"
-            f"- 营业收入: {metric.revenue} 万元\n"
-            f"- 营业成本: {metric.cost} 万元（成本收入比: {metric.cost / metric.revenue * 100:.1f}%）\n"
-            f"- 运营费用: {metric.operating_expense} 万元\n"
-            f"- 净利润: {metric.net_profit} 万元（净利率: {metric.net_profit / metric.revenue * 100:.1f}%）\n"
-            f"- 经营现金流: {metric.cash_flow} 万元\n"
-            f"- 应收账款: {metric.accounts_receivable} 万元\n"
-            f"- 毛利率: {(metric.revenue - metric.cost) / metric.revenue * 100:.1f}%\n\n"
-        )
-
-    if anomaly_rows:
-        data_text += "## 当月异常记录\n\n"
-        for anom, dept_name in anomaly_rows:
-            data_text += (
-                f"- [{anom.severity.upper()}] {dept_name} - {anom.metric_label}: "
-                f"实际 {anom.actual_value}, 预期 {anom.expected_range}, "
-                f"偏离 {anom.deviation_pct:+.1f}%\n"
-            )
-        data_text += "\n"
-    else:
-        data_text += "（当月无异常记录）\n\n"
 
     # ---- 4. 加载系统提示词模板 + 调用 LLM ----
     system_prompt = _load_report_template()
@@ -189,24 +204,7 @@ def export_report(req: ReportGenerateRequest, db: Session = Depends(get_db)):
     is_multi_dept = len(dept_names_in_data) > 1
 
     # ---- 2. 组装数据文本 + 调 LLM 生成报告 ----
-    data_text = f"## {req.year} 年 {req.month} 月经营数据\n\n"
-    data_text += f"共 {len(dept_names_in_data)} 个部门：{'、'.join(dept_names_in_data)}\n\n"
-    for metric, dept_name in metric_rows:
-        data_text += (
-            f"### {dept_name}\n"
-            f"- 营业收入: {metric.revenue} 万元\n"
-            f"- 营业成本: {metric.cost} 万元（成本收入比: {metric.cost / metric.revenue * 100:.1f}%）\n"
-            f"- 运营费用: {metric.operating_expense} 万元\n"
-            f"- 净利润: {metric.net_profit} 万元（净利率: {metric.net_profit / metric.revenue * 100:.1f}%）\n"
-            f"- 经营现金流: {metric.cash_flow} 万元\n"
-            f"- 应收账款: {metric.accounts_receivable} 万元\n"
-            f"- 毛利率: {(metric.revenue - metric.cost) / metric.revenue * 100:.1f}%\n\n"
-        )
-    if anomaly_rows:
-        data_text += "## 当月异常记录\n\n"
-        for anom, dn in anomaly_rows:
-            data_text += f"- [{anom.severity.upper()}] {dn} - {anom.metric_label}: 实际 {anom.actual_value}, 偏离 {anom.deviation_pct:+.1f}%\n"
-        data_text += "\n"
+    data_text, _ = _build_data_text(metric_rows, anomaly_rows, req.year, req.month)
 
     from ..services.llm_client import query_llm
     system_prompt = _load_report_template()

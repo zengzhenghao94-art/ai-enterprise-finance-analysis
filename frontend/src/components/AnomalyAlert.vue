@@ -118,6 +118,11 @@ import { fetchAnomalies, detectAnomalies } from '../api/index.js'
 const props = defineProps({
   departmentId: { type: [Number, Object], default: null },
   year: { type: Number, default: 2025 },
+  month: {
+    type: Number,
+    default: null,  // null = 点击时自动取当前月（保留旧行为）
+    validator: (v) => v === null || (v >= 1 && v <= 12),
+  },
 })
 
 const anomalies = ref([])
@@ -154,11 +159,10 @@ async function runDetection() {
   detecting.value = true
   error.value = ''
   try {
-    // 触发异常检测（默认检测 6 月，因为这是种子数据有代表性的月份）
-    const detectMonth = new Date().getMonth() + 1
+    const detectMonth = props.month ?? (new Date().getMonth() + 1)
     await detectAnomalies({
       year: props.year,
-      month: detectMonth > 12 ? 12 : detectMonth,
+      month: detectMonth,
       contamination: 0.15,
     })
     // 重新加载异常列表

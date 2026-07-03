@@ -8,13 +8,15 @@ def _isolation_forest_detect(metrics_data: list[dict], contamination: float) -> 
     from sklearn.ensemble import IsolationForest
     from sklearn.preprocessing import StandardScaler
 
-    n_samples = len(metrics_data)
-    if n_samples < 6:
-        return []
-
-    # 构建特征矩阵
+    # 构建特征矩阵（过滤脏数据，同步维护 valid_metrics 保证索引对齐）
+    REQUIRED_KEYS = ["revenue", "cost", "net_profit", "operating_expense", "cash_flow", "accounts_receivable"]
     features = []
+    valid_metrics = []
     for m in metrics_data:
+        missing = [k for k in REQUIRED_KEYS if k not in m]
+        if missing:
+            continue
+        valid_metrics.append(m)
         revenue = m["revenue"]
         cost = m["cost"]
         net_profit = m["net_profit"]
@@ -28,6 +30,9 @@ def _isolation_forest_detect(metrics_data: list[dict], contamination: float) -> 
         ])
 
     X = np.array(features, dtype=np.float64)
+
+    if len(X) < 6:
+        return []
     X_scaled = StandardScaler().fit_transform(X)
 
     model = IsolationForest(
@@ -58,7 +63,7 @@ def _isolation_forest_detect(metrics_data: list[dict], contamination: float) -> 
 
     anomalies = []
     for idx in anomaly_indices:
-        row = metrics_data[idx]
+        row = valid_metrics[idx]
         for col_idx, (m_name, m_label) in enumerate(metric_names):
             actual = X[idx, col_idx]
             normal_vals = normal_X[:, col_idx]

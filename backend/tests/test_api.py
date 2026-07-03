@@ -216,15 +216,19 @@ def test_nl2sql_with_department_filter(client):
     assert len(data["result"]) >= 1
 
 
-def test_nl2sql_security_block_insert(client):
-    """POST /api/query/nl2sql 非 SELECT 语句被拦截"""
-    # 当 LLM 不可用时，安全校验也会被调用，但端点可能先因 API Key 报 503
-    # 只做结构验证，不依赖 LLM
-    res = client.post("/api/query/nl2sql", json={
-        "query": "IGNORE -- 这不是 SELECT",
-    })
-    # 可能是 503（无 API Key）或 400（安全拦截）——两者都不是 500
-    assert res.status_code != 500
+def test_nl2sql_security_validate_sql_direct():
+    """_validate_sql 纯函数：拦截非 SELECT 语句"""
+    from app.api.nl2sql import _validate_sql
+
+    # INSERT / UPDATE / DELETE 等应被拦截
+    assert _validate_sql("SELECT * FROM financial_metrics") is True
+    assert _validate_sql("INSERT INTO financial_metrics VALUES (1,2,3)") is False
+    assert _validate_sql("UPDATE financial_metrics SET revenue=0") is False
+    assert _validate_sql("DELETE FROM financial_metrics") is False
+    assert _validate_sql("DROP TABLE financial_metrics") is False
+    assert _validate_sql("SELECT 1; DROP TABLE financial_metrics") is False
+    # strip() 后正常 SELECT 仍应通过
+    assert _validate_sql("  SELECT * FROM financial_metrics") is True
 
 
 def test_nl2sql_empty_query(client):

@@ -173,8 +173,17 @@ async function exportReportFn() {
       body: JSON.stringify(body),
     })
     if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ detail: '导出失败' }))
-      throw new Error(err.detail || '导出失败')
+      // 区分错误类型：HTTP 状态码 → 具体提示
+      const statusMap = {
+        404: '未找到该月数据，请确认年份和月份',
+        400: '请求参数有误，请重试',
+        422: '提交数据不合法，请检查输入',
+        503: 'AI 服务暂时不可用，请稍后重试',
+        500: '服务器内部错误，请联系管理员',
+      }
+      const err = await resp.json().catch(() => ({}))
+      const detail = err.detail || statusMap[resp.status] || '导出失败'
+      throw new Error(`[${resp.status}] ${detail}`)
     }
     const blob = await resp.blob()
     const url = URL.createObjectURL(blob)

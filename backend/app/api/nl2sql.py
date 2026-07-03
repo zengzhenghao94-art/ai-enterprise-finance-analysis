@@ -1,5 +1,6 @@
 """NL2SQL API —— 自然语言查询转 SQL"""
 
+import re
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -7,6 +8,9 @@ from sqlalchemy import text
 
 from ..database import get_db
 from ..schemas import NL2SQLRequest, NL2SQLResponse
+
+# 单次查询最大返回行数（防御 OOM）
+MAX_RESULT_ROWS = 1000
 
 router = APIRouter(prefix="/api/query", tags=["nl2sql"])
 
@@ -76,21 +80,19 @@ def nl2sql(req: NL2SQLRequest, db: Session = Depends(get_db)):
     try:
         raw_sql = query_llm(user_prompt, system_prompt=system_prompt).strip()
     except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"查询处理失败: {e}")
 
-    # 清理 SQL（去掉可能的 markdown 代码块标记）
-    if raw_sql.startswith("```"):
-        lines = raw_sql.split("\n")
-        # 去掉首行 ```sql 和末行 ```
-        sql_lines = [l for l in lines if not l.startswith("```")]
-        raw_sql = "\n".join(sql_lines).strip()
+    # 清理 SQL：提取 markdown 代码块内容（支持 ```sql 和 ```）
+    md_match = re.search(r"```(?:sql)?\s*\n?(.*?)\n?```", raw_sql, re.DOTALL)
+    if md_match:
+        raw_sql = md_match.group(1).strip()
     # 去掉末尾分号
     raw_sql = raw_sql.rstrip(";").strip()
 
     sql_generated = raw_sql
 
-    # Step 2: 非查询拦截 —— LLM 判定用户输入不是数据查询
-    if raw_sql.strip().upper() == "[NOT_A_QUERY]":
+    # Step 2: 非查询拦截 —— [NOT_A_QUERY] 可出现在 SQL 体内任意位置
+    if "[NOT_A_QUERY]" in raw_sql.upper():
         return NL2SQLResponse(
             query=req.query,
             sql_generated="",
@@ -107,20 +109,20 @@ def nl2sql(req: NL2SQLRequest, db: Session = Depends(get_db)):
     if not _validate_sql(raw_sql):
         raise HTTPException(
             status_code=400,
-            detail=f"SQL 安全校验未通过：只允许 SELECT。生成: {raw_sql}",
+            detail="SQL 安全校验未通过：仅支持 SELECT 查询，请重新描述需求",
         )
 
-    # Step 3: 执行 SQL
+    # Step 3: 执行 SQL（限制最大行数防御 OOM）
     try:
         result_proxy = db.execute(text(raw_sql))
-        rows = result_proxy.fetchall()
+        rows = result_proxy.fetchmany(MAX_RESULT_ROWS)
         columns = list(result_proxy.keys())
         result = [dict(zip(columns, row)) for row in rows]
     except Exception as e:
         print(repr(e))
         raise HTTPException(
             status_code=400,
-            detail=f"SQL 执行失败: {repr(e)}\nSQL: {raw_sql}",
+            detail="SQL 执行失败，请检查查询条件是否正确",
         )
 
     # Step 4: LLM 生成解释

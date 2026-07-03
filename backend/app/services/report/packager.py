@@ -50,6 +50,7 @@ td { padding: 10px 14px; border-bottom: 1px solid var(--dove); }
         css_temp = output_dir / "report.css"
         css_temp.write_text(css_content, encoding="utf-8")
         zf.write(str(css_temp), "report.css")
+        css_temp.unlink(missing_ok=True)  # 打包完立即清理，不留残留文件
 
         # 写入图表目录
         if chart_dir.exists():
