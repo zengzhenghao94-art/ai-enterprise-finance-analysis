@@ -5,3 +5,25 @@ backend/data/finance.db
 node_modules/
 dist/
 .vite/
+.ruff_cache/
+.pytest_cache/
+_test_export/
+
+# AI agent configs (only .claude is tracked)
+.agent/
+.agents/
+.cursor/
+.kiro/
+.pi/
+.windsurf/
+.hermes.md
+
+# AI agent configs — 不提交到实训作品
+.claude/
+.github/
+AGENTS.md
+CLAUDE.md
+
+# 敏感/本地文件 — 不推 GitHub
+实训作品提交.zip
+logs/

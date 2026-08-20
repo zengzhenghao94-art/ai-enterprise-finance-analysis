@@ -23,7 +23,7 @@
 
 ### 环境要求
 
-- Python 3.11+（路径 `D:/Users/z1308/AppData/Local/Programs/Python/Python311/python.exe`）
+- Python 3.11+
 - Node.js 18+
 - Git Bash（Windows）
 
@@ -33,7 +33,7 @@
 cd backend
 
 # Step 1: 安装依赖
-D:/Users/z1308/AppData/Local/Programs/Python/Python311/python.exe -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 
 # Step 2: 配置 API Key
 cp .env.example .env
@@ -41,7 +41,7 @@ cp .env.example .env
 # LLM_API_KEY=sk-xxxxxxxxxxxxxxxx
 
 # Step 3: 启动服务
-D:/Users/z1308/AppData/Local/Programs/Python/Python311/python.exe -m uvicorn app.main:app --reload --port 8000
+python -m uvicorn app.main:app --reload --port 8000
 ```
 
 启动后访问 http://localhost:8000/docs 查看 Swagger 文档。
@@ -64,7 +64,7 @@ npm run dev
 
 ```bash
 cd backend
-D:/Users/z1308/AppData/Local/Programs/Python/Python311/python.exe -m pytest tests/ -v
+python -m pytest tests/ -v
 ```
 
 ---

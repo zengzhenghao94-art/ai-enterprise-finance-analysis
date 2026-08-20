@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl border border-steep-dove p-4">
+  <div class="bg-white rounded-2xl border border-steep-dove-50 p-4">
     <div class="flex items-center justify-between mb-3">
       <h4 class="text-sm font-semibold text-steep-ash flex items-center gap-2">
         ⚠️ 异常预警

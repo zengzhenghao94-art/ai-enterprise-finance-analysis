@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl shadow-sm border border-steep-dove overflow-hidden">
+  <div class="bg-white rounded-2xl border border-steep-dove-50 overflow-hidden">
     <!-- 标题栏 -->
     <div class="px-4 py-3 bg-steep-wash border-b border-steep-dove flex items-center justify-between">
       <h3 class="text-sm font-semibold text-steep-ink flex items-center gap-2">

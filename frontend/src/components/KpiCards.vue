@@ -13,7 +13,7 @@
       <div
         v-for="card in kpiList"
         :key="card.key"
-        class="bg-white rounded-2xl p-4 border border-steep-dove hover:shadow-md transition-shadow"
+        class="bg-white rounded-2xl p-4 border border-steep-dove-50 hover:shadow-md transition-shadow"
       >
         <div class="text-xs text-steep-graphite mb-1">{{ card.label }}</div>
         <div class="text-xl font-bold text-steep-ink">
@@ -26,7 +26,7 @@
     <!-- 空状态 -->
     <div
       v-if="!loading && !latestMonth"
-      class="bg-white rounded-2xl p-8 border border-steep-dove text-center text-steep-graphite text-sm"
+      class="bg-white rounded-2xl p-8 border border-steep-dove-50 text-center text-steep-graphite text-sm"
     >
       暂无指标数据
     </div>

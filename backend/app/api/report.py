@@ -30,7 +30,7 @@ def _safe_pct(numerator: float, denominator: float) -> str:
     return f"{numerator / denominator * 100:.1f}%"
 
 
-def _build_data_text(metric_rows, anomaly_rows, year: int, month: int) -> str:
+def _build_data_text(metric_rows, anomaly_rows, year: int, month: int) -> tuple[str, list[str]]:
     """构建传给 LLM 的数据文本（generate + export 共用，消除 ~40 行重复）"""
     dept_names_in_data = sorted(set(dept_name for _, dept_name in metric_rows))
 

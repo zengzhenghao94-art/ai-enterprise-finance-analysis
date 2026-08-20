@@ -2,7 +2,7 @@
 
 运行方式：
   cd backend
-  D:/Users/z1308/AppData/Local/Programs/Python/Python311/python.exe -m pytest tests/ -v
+  python -m pytest tests/ -v
 
 注意：NL2SQL 和简报生成端点依赖 LLM API Key。如果 .env 未配置，
 测试标记为 skip 而非 fail。

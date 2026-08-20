@@ -30,21 +30,74 @@ def package_zip(
         zf.write(str(html_path), html_path.name)
 
         # 写入 CSS 文件
-        css_content = """/* Steep Design System — Report Styles */
+        css_content = """/* Steep Design System — Report Styles (synced with html_builder) */
 :root {
   --obsidian: #000000; --ink: #17191c; --ash: #4c4c4c;
   --graphite: #777b86; --slate: #8b8c8d; --dove: #a3a6af;
   --fog: #f7f7f8; --white: #ffffff;
   --blue: #1e40af; --cyan: #0891b2; --crimson: #dc2626;
+  --radius-card: 24px; --radius-img: 12px;
+  --card-padding: 20px;
 }
-body { font-family: 'Inter', 'Noto Sans SC', sans-serif; font-size: 16px; color: var(--ink); max-width: 1200px; margin: 40px auto; padding: 0 32px; }
-h1 { font-family: 'Noto Serif', serif; font-size: 44px; font-weight: 400; }
-h2 { font-family: 'Noto Serif', serif; font-size: 26px; margin-top: 80px; }
-img { max-width: 100%; border-radius: 12px; margin: 24px 0; }
-table { width: 100%; border-collapse: collapse; }
-th { text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--ink); font-size: 13px; text-transform: uppercase; }
-td { padding: 10px 14px; border-bottom: 1px solid var(--dove); }
-@media print { body { font-size: 13px; } }
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 16px; line-height: 1.5; color: var(--ink);
+  background-color: var(--white);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(0, 0, 0, 0.02) 39px,
+      rgba(0, 0, 0, 0.02) 40px
+    );
+  -webkit-font-smoothing: antialiased;
+}
+
+.page { max-width: 1200px; margin: 40px auto 80px; padding: 0 32px; }
+
+/* Typography */
+h1 { font-family: 'Noto Serif', 'Noto Serif CJK SC', serif; font-size: 44px; font-weight: 400; line-height: 1.1; }
+h2 { font-family: 'Noto Serif', 'Noto Serif CJK SC', serif; font-size: 26px; font-weight: 450; margin-top: 80px; padding-bottom: 10px; border-bottom: 2px solid var(--fog); }
+h3 { font-size: 18px; font-weight: 500; margin-top: 32px; }
+p  { margin-bottom: 12px; line-height: 1.65; }
+
+/* KPI Cards */
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+.kpi-card {
+  background: var(--white); border: 1px solid var(--dove);
+  border-radius: var(--radius-card); padding: var(--card-padding);
+}
+.kpi-card .label { font-size: 14px; color: var(--graphite); margin-bottom: 8px; }
+.kpi-card .value { font-size: 40px; font-weight: 400; line-height: 1.1; color: var(--ink); }
+
+/* Data Stories */
+.data-story {
+  margin: 48px 0; padding: 36px 40px;
+  border-radius: var(--radius-card);
+  background: var(--white); border: 1px solid var(--dove);
+}
+.data-story .story-head h3 { font-size: 24px; font-weight: 400; margin: 0; }
+.data-story .story-chart img { width: 100%; max-height: 440px; object-fit: contain; border-radius: var(--radius-img); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 16px 0 32px; font-size: 15px; }
+thead th { text-align: left; padding: 10px 14px; border-bottom: 2px solid var(--ink); font-size: 13px; text-transform: uppercase; color: var(--graphite); }
+tbody td { padding: 10px 14px; border-bottom: 1px solid var(--dove); font-variant-numeric: tabular-nums; }
+
+/* Footer */
+.footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--dove); font-size: 14px; color: var(--graphite); }
+
+/* Print — strip textures, keep structure */
+@media print {
+  body { font-size: 13px; background-image: none; }
+  .page { max-width: 100%; margin: 0; padding: 0 16px; }
+  .data-story { background-image: none; }
+  h1 { font-size: 32px; } h2 { font-size: 22px; }
+}
 """
         # 将 CSS 写入临时位置再打包
         css_temp = output_dir / "report.css"

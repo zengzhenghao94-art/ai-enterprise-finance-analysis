@@ -34,7 +34,7 @@ CSS = r"""/* ============================================================
   --radius-card:  24px;
   --radius-img:   12px;
   --radius-btn:   9999px;
-  --card-padding: 24px;
+  --card-padding: 20px;
   --section-gap:  80px;
   --max-width:    1200px;
 }
@@ -47,7 +47,15 @@ body {
   font-size: 16px;
   line-height: 1.5;
   color: var(--ink);
-  background: var(--white);
+  background-color: var(--white);
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 39px,
+      rgba(0, 0, 0, 0.02) 39px,
+      rgba(0, 0, 0, 0.02) 40px
+    );
   -webkit-font-smoothing: antialiased;
 }
 
@@ -76,7 +84,18 @@ strong { font-weight: 600; color: var(--ink); background: linear-gradient(180deg
 .header {
   padding: 48px 0 40px;
   border-bottom: 1px solid var(--dove);
+  position: relative;
   margin-bottom: var(--section-gap);
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, rgba(30, 64, 175, 0.06), rgba(8, 145, 178, 0.04), transparent);
 }
 
 .header h1 { margin-bottom: 8px; }
@@ -93,7 +112,7 @@ strong { font-weight: 600; color: var(--ink); background: linear-gradient(180deg
 }
 
 .kpi-card .label { font-size: 14px; color: var(--graphite); margin-bottom: 8px; }
-.kpi-card .value { font-size: 44px; font-weight: 400; line-height: 1.1; color: var(--ink); }
+.kpi-card .value { font-size: 40px; font-weight: 400; line-height: 1.1; color: var(--ink); }
 .kpi-card .unit  { font-size: 16px; color: var(--ash); margin-left: 4px; }
 
 .kpi-card.warm { background: var(--wash); border-color: transparent; }
@@ -313,12 +332,20 @@ tbody tr:nth-child(even) { background: var(--fog); }
 
 /* ---------- Print ---------- */
 @media print {
-  body { font-size: 13px; }
+  body {
+    font-size: 13px;
+    background-image: none;
+  }
+  .header::after { display: none; }
+  .data-story {
+    margin: 48px 0;
+    padding: 40px 32px;
+    background-image: none;
+  }
   .page { max-width: 100%; margin: 0; padding: 0 16px; }
   .kpi-grid { grid-template-columns: repeat(3, 1fr); }
   h1 { font-size: 32px; }
   h2 { font-size: 22px; }
-  .data-story { margin: 48px 0; padding: 40px 32px; }
   .data-story .story-head h3 { font-size: 22px; }
   .section-gap { break-before: page; }
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-2xl border border-steep-dove p-4">
+  <div class="bg-white rounded-2xl border border-steep-dove-50 p-4">
     <h4 class="text-sm font-semibold text-steep-ash mb-3">📈 月度趋势</h4>
 
     <!-- 加载骨架 -->

@@ -1,5 +1,5 @@
 <template>
-  <header class="bg-white shadow-sm border-b border-steep-dove sticky top-0 z-50">
+  <header class="bg-white/85 backdrop-blur-lg border-b border-steep-dove-50 sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
       <!-- 左侧：Logo + 标题 -->
       <div class="flex items-center gap-3">

@@ -14,6 +14,7 @@ export default {
           graphite:  '#777b86',
           slate:     '#8b8c8d',
           dove:      '#a3a6af',
+          'dove-50': 'rgba(163, 166, 175, 0.5)',
           fog:       '#f7f7f8',
           white:     '#ffffff',
           blue:      '#1e40af',

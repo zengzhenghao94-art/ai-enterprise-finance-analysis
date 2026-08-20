@@ -1,6 +1,7 @@
 """NL2SQL API —— 自然语言查询转 SQL"""
 
 import re
+import logging
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -11,6 +12,8 @@ from ..schemas import NL2SQLRequest, NL2SQLResponse
 
 # 单次查询最大返回行数（防御 OOM）
 MAX_RESULT_ROWS = 1000
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/query", tags=["nl2sql"])
 
@@ -119,7 +122,7 @@ def nl2sql(req: NL2SQLRequest, db: Session = Depends(get_db)):
         columns = list(result_proxy.keys())
         result = [dict(zip(columns, row)) for row in rows]
     except Exception as e:
-        print(repr(e))
+        logger.exception("SQL execution failed: %s", e)
         raise HTTPException(
             status_code=400,
             detail="SQL 执行失败，请检查查询条件是否正确",
@@ -135,7 +138,7 @@ def nl2sql(req: NL2SQLRequest, db: Session = Depends(get_db)):
         )
         explanation = query_llm(explain_prompt).strip()
     except Exception as e:
-        print(repr(e))
+        logger.exception("LLM explanation generation failed: %s", e)
         explanation = f"查询返回 {len(result)} 条记录。（注：AI 解释生成失败，以上为自动摘要）"
 
     tokens_used = estimate_tokens(user_prompt, system_prompt)
